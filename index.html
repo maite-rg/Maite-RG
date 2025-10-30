@@ -1,114 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Segundo parcial</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dattebayo</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
-    <header class="shadow">
-        <div class="container-logo">
-            <img src="rick,.jpg" alt="">
-        </div>
-        <div>
-            <button id="btn-dark-mode">Dark mode</button>
-        </div>
-    </header>
+  <header class="shadow">
+    <div class="conteiner-logo"><img src="naruuto.webp" alt="Logo" width="60"></div>
+    <button id="btn-dark-mode">Dark mode</button>
+  </header>
 
-    <section class="main-container">
-        <p>Activite theory Team</p>
-        <h1>Rick and Morty</h1>
-        <span> Television & Film / Nominee</span>
-    </section>
+  <section class="main-conteiner">
+    <p>Active theory Team</p>
+    <h1>Dattebayo</h1>
+    <span>Television y Ficción / Nominee</span>
+  </section>
 
+  <div class="search">
+    <input type="text" placeholder="Buscar personaje" id="search-input">
+    <button id="btn-search">Buscar</button>
+  </div>
 
-    <div class="search">
-        <input class="shadow" type="text" placeholder="buscar personaje">
-        <button>Buscar</button>
-    </div>
+  <section id="personajes" class="person"></section>
 
-    <section id="personajes" class="personaje">
+  <div style="text-align:center; margin:20px;">
+    <button id="btn-load-more">Cargar más personajes</button>
+  </div>
 
-    </section>
-    <div>
-        <button id="btn-load-more">
-            cargar mas personajes
-        </button>
-    </div>
+  <script>
+    let currentPage = 1, info_page = null;
+    const contenedor = document.getElementById('personajes');
+    const btnMore = document.getElementById('btn-load-more');
+    const btnDark = document.getElementById('btn-dark-mode');
 
-</body>
+    const loader = () => {
+      const l = document.createElement('div');
+      l.id = 'loader'; l.textContent = 'Cargando...';
+      contenedor.appendChild(l);
+    };
+    const hideLoader = () => document.getElementById('loader')?.remove();
 
-<script>
-    let info_pages= null
-    function renderLoader(){
-        const contenedor = document.getElementById('personajes')
-        const loader =document.createElement('div')
-        loader.setAttribute('id', 'loader')
-        loader.appendChild(document.createTextNode('Cargando...'))
-        contenedor.appendChild(loader)
+    async function obtenerPersonajes(page = 1) {
+      try {
+        loader();
+        const res = await fetch(`https://dattebayo-api.onrender.com/characters?page=${page}`);
+        const { characters, info } = await res.json();
+        info_page = info;
+        renderPersonajes(characters);
+        btnMore.style.display = info_page.nextPage ? 'block' : 'none';
+      } catch (err) {
+        console.error('Error:', err);
+      } finally {
+        hideLoader();
+      }
     }
 
-
-    function hiddenLoader(){
-        const contenedor = document.getElementById('personajes')
-        const loader = document.getElementById('loader')
-        contenedor.removeChild(loader)
-    }
-    
-
-     async function obtener_personajes(page = 1){
-        const url = "https://rickandmortyapi.com/api/character?page=${page}";
-        renderLoader()
-
-        const response = await fetch(url)
-        .then(res => res.json())
-        .catch(err => console.log(err));
-        const personajes = response.results;
-        info_pages= response?.info
-        console.log('variable response',info_pages);
-        console.log('array',personajes);
-        const contenedor = document.getElementById('personajes')
-        personajes.forEach((element) => {
-            const contenedor_personaje = document.createElement('div');
-            const imagen = document.createElement('img');
-            imagen.src = element.image
-            contenedor_personaje.appendChild(imagen)
-            contenedor.appendChild(contenedor_personaje)
-        });
-        hiddenLoader()
-
+    function renderPersonajes(personajes) {
+      personajes.forEach(({ images, name }) => {
+        const card = document.createElement('div');
+        card.className = 'personaje-card';
+        card.innerHTML = `<img src="${images[0]}" alt="${name}" width="150"><h3>${name}</h3>`;
+        contenedor.appendChild(card);
+      });
     }
 
-    function loadMore(){
-        console.log('load more');
+    async function buscarPersonaje() {
+      const input = document.getElementById('search-input').value.trim().toLowerCase();
+      contenedor.innerHTML = '';
+      if (!input) return obtenerPersonajes(1);
+      try {
+        loader();
+        const res = await fetch(`https://dattebayo-api.onrender.com/characters?name=${input}`);
+        const { characters } = await res.json();
+        hideLoader();
+        if (!characters?.length) return contenedor.innerHTML = '<p>No se encontraron personajes.</p>';
+        renderPersonajes(characters);
+      } catch (err) {
+        console.error('Error:', err);
+      }
     }
-    
-    const btn = document.getElementById('btn-load-more')
-    btn.addEventListener('click',loadMore);
-    obtener_personajes();
-    const darkModebutton=document.getElementById('btn-dark-mode');
-    function toggleDarkMode(){
-        document.body.classList.toggle('dark-mode');
-    }
-    darkModebutton.addEventListener('click',toggleDarkMode)
-
 
     function toggleDarkMode() {
-    document.body.classList.toggle('dark-mode');
-
-    const darkModeButton = document.getElementById('btn-dark-mode');
-    
-    if (document.body.classList.contains('dark-mode')) {
-        darkModeButton.innerText = 'Dark mode';
-    } else {
-        darkModeButton.innerText = 'Light mode';
+      document.body.classList.toggle('dark-mode');
+      btnDark.textContent = document.body.classList.contains('dark-mode') ? 'Light mode' : 'Dark mode';
     }
-}
- 
 
-</script>
+    btnMore.addEventListener('click', () => obtenerPersonajes(++currentPage));
+    btnDark.addEventListener('click', toggleDarkMode);
+    document.getElementById('btn-search').addEventListener('click', buscarPersonaje);
 
+    obtenerPersonajes();
+  </script>
+</body>
 </html>
